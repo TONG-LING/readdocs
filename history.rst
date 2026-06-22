@@ -3,47 +3,31 @@
 
 .. mermaid::
 
-   graph TD
+   flowchart TB
       root["PAEDiff 交通信号优化"]
-
-      base["基础框架"]
-      posterior["后验设计"]
-      proxy["代理模型"]
-      assess["效果评估"]
-      next["后续改进"]
+      base["基础框架<br/>DQN + SUMO + 扩散模型"]
+      problem["问题发现<br/>-MSE 不能作为真实似然"]
+      proxy["当前方案<br/>代理模型预测真实 balance_score"]
+      result["当前诊断<br/>MAE 接近标签标准差<br/>Spearman 接近 0"]
+      next["后续改进方向"]
 
       root --> base
-      root --> posterior
-      root --> proxy
-      root --> assess
-      root --> next
+      base --> problem
+      problem --> proxy
+      proxy --> result
+      result --> next
 
-      base --> base1["DQN + SUMO"]
-      base --> base2["条件扩散模型生成 reward 序列"]
-      base --> base3["Pareto 平衡选择"]
+      next --> rank["排序学习<br/>直接学习谁更好"]
+      next --> multi["多目标预测<br/>拆分 q / worst / spread"]
+      next --> sample["样本采样优化<br/>补充优秀区域样本"]
+      next --> verify["单独验证<br/>检查代理模型和候选池"]
 
-      posterior --> p1["原始尝试：-MSE 作为似然"]
-      posterior --> p2["问题：-MSE 不是仿真后的真实似然"]
-      posterior --> p3["调整：扩散模型作为先验"]
-      posterior --> p4["调整：代理模型提供低成本似然/效用"]
-
-      proxy --> pr1["输入：reward_sequence + condition"]
-      proxy --> pr2["输出：predicted_balance_score"]
-      proxy --> pr3["结构：统计池化 + MLP"]
-      proxy --> pr4["损失：MSE 回归真实 balance_score"]
-      proxy --> pr5["样本：proxy_surrogate_train.csv"]
-
-      assess --> e1["代理诊断：MAE 接近标签标准差"]
-      assess --> e2["排序诊断：Spearman 接近 0"]
-      assess --> e3["后验诊断：22 轮中 11 轮变好，11 轮变差"]
-
-      next --> n1["排序学习"]
-      next --> n2["多目标拆分预测"]
-      next --> n3["优秀区域局部采样"]
-      next --> n4["保留不确定样本送 SUMO"]
-      next --> n5["单独拆出代理模型训练"]
-      next --> n6["检查扩散候选池质量"]
-      next --> n7["构造好/中/差样本"]
+      classDef main fill:#e8f3ff,stroke:#2b6cb0,stroke-width:1px,color:#111;
+      classDef issue fill:#fff4e6,stroke:#c05621,stroke-width:1px,color:#111;
+      classDef plan fill:#edf7ed,stroke:#2f855a,stroke-width:1px,color:#111;
+      class root,base,proxy,result main;
+      class problem issue;
+      class next,rank,multi,sample,verify plan;
 
 2026-06-13：清理原始后验设计
 ----------------------------
@@ -130,67 +114,25 @@
 
 .. mermaid::
 
-   graph TD
+   flowchart TB
       improve["代理模型后续改进"]
 
-      rank["1. 排序学习"]
-      pair["构造样本对：判断 A 是否优于 B"]
-      rankloss["目标从精确估分转为排对顺序"]
+      improve --> rank["1. 排序学习<br/>从估分改成比较样本优劣"]
+      improve --> multi["2. 多目标拆分<br/>分别预测 q、最差方向和方向差异"]
+      improve --> sample["3. 样本优化<br/>在优秀样本附近补充局部样本"]
+      improve --> separate["4. 单独验证<br/>固定扩散模型，单独训练和测试代理模型"]
 
-      multi["2. 多目标拆分预测"]
-      q["预测综合队列 q"]
-      worst["预测最差方向 worst_dir_queue"]
-      spread["预测方向差异 dir_spread"]
-      penalty["预测平衡惩罚 q_balance_penalty"]
-      combine["最后再合成最终评分"]
-
-      sample["3. 优化样本采样"]
-      local["在优秀样本附近局部采样"]
-      uncertain["保留不确定性高的样本送 SUMO"]
-      avoid["避免过早过滤潜在优秀样本"]
-
-      separate["4. 单独拆出代理模型训练"]
-      fixeddiff["先固定训练好的扩散模型"]
-      collect["配合 SUMO 单独收集代理训练数据"]
-      observe["输出更多 CSV 观察代理模型效果"]
-
-      dataissue["5. 检查样本与评价定义"]
-      agg["检查四方向聚合方式是否压缩标签波动"]
-      manual["尝试构造好/中/差样本"]
-      pool["检查扩散候选池是否包含高质量样本"]
-
-      verify["真实 SUMO 验证"]
-
-      improve --> rank
-      rank --> pair
-      rank --> rankloss
-      rank --> verify
-
-      improve --> multi
-      multi --> q
-      multi --> worst
-      multi --> spread
-      multi --> penalty
-      multi --> combine
-      combine --> verify
-
-      improve --> sample
-      sample --> local
-      sample --> uncertain
-      sample --> avoid
+      rank --> verify["真实 SUMO 验证"]
+      multi --> verify
       sample --> verify
-
-      improve --> separate
-      separate --> fixeddiff
-      separate --> collect
-      separate --> observe
       separate --> verify
 
-      improve --> dataissue
-      dataissue --> agg
-      dataissue --> manual
-      dataissue --> pool
-      dataissue --> verify
+      classDef root fill:#e8f3ff,stroke:#2b6cb0,stroke-width:1px,color:#111;
+      classDef child fill:#edf7ed,stroke:#2f855a,stroke-width:1px,color:#111;
+      classDef verify fill:#fff4e6,stroke:#c05621,stroke-width:1px,color:#111;
+      class improve root;
+      class rank,multi,sample,separate child;
+      class verify verify;
 
 后续重点：
 
