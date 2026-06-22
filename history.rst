@@ -4,16 +4,16 @@
 .. mermaid::
 
    graph TD
-      base["基础框架：DQN + SUMO + 扩散模型"]
-      problem["问题发现：-MSE 不能作为真实似然"]
-      proxy["当前方案：代理模型预测 balance_score"]
-      diagnose["当前诊断：MAE 接近标签标准差，Spearman 接近 0"]
+      base["基础框架"]
+      problem["问题发现"]
+      proxy["当前方案"]
+      diagnose["当前诊断"]
       next["后续改进方向"]
 
       rank["排序学习"]
       multi["多目标拆分预测"]
-      sample["样本采样优化"]
-      separate["单独验证代理模型"]
+      sample["样本优化"]
+      separate["单独验证"]
 
       base --> problem
       problem --> proxy
@@ -23,6 +23,16 @@
       next --> multi
       next --> sample
       next --> separate
+
+图中节点说明：
+
+.. code-block:: text
+
+   基础框架：DQN + SUMO + 条件扩散模型 + Pareto 平衡选择
+   问题发现：原始 -MSE 不能作为仿真后的真实似然
+   当前方案：代理模型预测真实 SUMO 后的 balance_score
+   当前诊断：MAE 接近标签标准差，Spearman 接近 0
+   后续改进方向：排序学习、多目标拆分预测、样本优化、单独验证
 
 2026-06-13：清理原始后验设计
 ----------------------------
@@ -111,10 +121,10 @@
 
    graph TD
       improve["代理模型后续改进"]
-      rank_plan["排序学习：学习谁比谁更好"]
-      multi_plan["多目标拆分：分别预测 q、最差方向和方向差异"]
-      sample_plan["样本优化：补充优秀区域样本，保留不确定样本"]
-      separate_plan["单独验证：固定扩散模型，单独训练代理模型"]
+      rank_plan["排序学习"]
+      multi_plan["多目标拆分"]
+      sample_plan["样本优化"]
+      separate_plan["单独验证"]
       verify["真实 SUMO 验证"]
 
       improve --> rank_plan
@@ -125,6 +135,16 @@
       multi_plan --> verify
       sample_plan --> verify
       separate_plan --> verify
+
+改进方向说明：
+
+.. code-block:: text
+
+   排序学习：学习候选样本之间谁更好，而不是只追求精确预测分数
+   多目标拆分：分别预测 q、最差方向队列、方向差异，再合成最终评分
+   样本优化：补充优秀区域附近样本，并保留不确定样本送 SUMO
+   单独验证：固定扩散模型，单独收集数据、训练和测试代理模型
+   真实 SUMO 验证：所有改进最终都要用真实仿真结果判断是否有效
 
 后续重点：
 
