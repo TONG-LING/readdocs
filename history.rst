@@ -1,34 +1,28 @@
 历史
 ====
 
-.. code-block:: text
+.. mermaid::
 
-   PAEDiff 交通信号优化
-   |
-   |-- 基础框架
-   |   |-- DQN + SUMO
-   |   |-- 条件扩散模型生成 reward 序列
-   |   `-- Pareto 平衡选择
-   |
-   |-- 问题发现
-   |   |-- 原始尝试：-MSE 作为似然
-   |   `-- 当前判断：-MSE 不是仿真后的真实似然
-   |
-   |-- 当前方案
-   |   |-- 扩散模型作为先验，生成候选样本
-   |   |-- 代理模型预测真实 SUMO 后的 balance_score
-   |   `-- 后验筛选根据 proxy_score 选择下一代
-   |
-   |-- 当前诊断
-   |   |-- MAE 接近真实标签标准差
-   |   |-- Spearman 接近 0
-   |   `-- 后验 22 轮中 11 轮变好、11 轮变差
-   |
-   `-- 后续改进方向
-       |-- 排序学习
-       |-- 多目标拆分预测
-       |-- 样本采样优化
-       `-- 单独验证代理模型与候选池质量
+   graph TD
+      base["基础框架：DQN + SUMO + 扩散模型"]
+      problem["问题发现：-MSE 不能作为真实似然"]
+      proxy["当前方案：代理模型预测 balance_score"]
+      diagnose["当前诊断：MAE 接近标签标准差，Spearman 接近 0"]
+      next["后续改进方向"]
+
+      rank["排序学习"]
+      multi["多目标拆分预测"]
+      sample["样本采样优化"]
+      separate["单独验证代理模型"]
+
+      base --> problem
+      problem --> proxy
+      proxy --> diagnose
+      diagnose --> next
+      next --> rank
+      next --> multi
+      next --> sample
+      next --> separate
 
 2026-06-13：清理原始后验设计
 ----------------------------
@@ -113,24 +107,24 @@
 后续计划
 --------
 
-.. code-block:: text
+.. mermaid::
 
-   代理模型后续改进
-   |
-   |-- 1. 排序学习
-   |   `-- 不追求精确估分，重点学习候选样本之间谁更好
-   |
-   |-- 2. 多目标拆分预测
-   |   `-- 分别预测 q、最差方向队列、方向差异，再合成最终评分
-   |
-   |-- 3. 样本采样优化
-   |   `-- 补充优秀区域附近样本，并保留不确定样本送 SUMO
-   |
-   |-- 4. 单独验证代理模型
-   |   `-- 固定扩散模型，单独收集数据、训练代理模型、观察 CSV 结果
-   |
-   `-- 5. 真实 SUMO 验证
-       `-- 所有改进最终都用真实仿真结果判断是否有效
+   graph TD
+      improve["代理模型后续改进"]
+      rank_plan["排序学习：学习谁比谁更好"]
+      multi_plan["多目标拆分：分别预测 q、最差方向和方向差异"]
+      sample_plan["样本优化：补充优秀区域样本，保留不确定样本"]
+      separate_plan["单独验证：固定扩散模型，单独训练代理模型"]
+      verify["真实 SUMO 验证"]
+
+      improve --> rank_plan
+      improve --> multi_plan
+      improve --> sample_plan
+      improve --> separate_plan
+      rank_plan --> verify
+      multi_plan --> verify
+      sample_plan --> verify
+      separate_plan --> verify
 
 后续重点：
 
