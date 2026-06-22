@@ -9,7 +9,7 @@
       problem["问题发现<br/>-MSE 不能作为真实似然"]
       proxy["当前方案<br/>代理模型预测真实 balance_score"]
       result["当前诊断<br/>MAE 接近标签标准差<br/>Spearman 接近 0"]
-      next["后续改进方向"]
+      next["后续改进方向<br/>排序学习 / 多目标预测 / 样本优化 / 单独验证"]
 
       root --> base
       base --> problem
@@ -17,17 +17,12 @@
       proxy --> result
       result --> next
 
-      next --> rank["排序学习<br/>直接学习谁更好"]
-      next --> multi["多目标预测<br/>拆分 q / worst / spread"]
-      next --> sample["样本采样优化<br/>补充优秀区域样本"]
-      next --> verify["单独验证<br/>检查代理模型和候选池"]
-
       classDef main fill:#e8f3ff,stroke:#2b6cb0,stroke-width:1px,color:#111;
       classDef issue fill:#fff4e6,stroke:#c05621,stroke-width:1px,color:#111;
       classDef plan fill:#edf7ed,stroke:#2f855a,stroke-width:1px,color:#111;
       class root,base,proxy,result main;
       class problem issue;
-      class next,rank,multi,sample,verify plan;
+      class next plan;
 
 2026-06-13：清理原始后验设计
 ----------------------------
@@ -117,15 +112,11 @@
    flowchart TB
       improve["代理模型后续改进"]
 
-      improve --> rank["1. 排序学习<br/>从估分改成比较样本优劣"]
-      improve --> multi["2. 多目标拆分<br/>分别预测 q、最差方向和方向差异"]
-      improve --> sample["3. 样本优化<br/>在优秀样本附近补充局部样本"]
-      improve --> separate["4. 单独验证<br/>固定扩散模型，单独训练和测试代理模型"]
-
-      rank --> verify["真实 SUMO 验证"]
-      multi --> verify
-      sample --> verify
-      separate --> verify
+      improve --> rank["1. 排序学习<br/>不追求精确估分，重点排对样本优劣"]
+      rank --> multi["2. 多目标拆分<br/>分别预测 q、最差方向和方向差异"]
+      multi --> sample["3. 样本优化<br/>补充优秀区域样本，保留不确定样本"]
+      sample --> separate["4. 单独验证<br/>固定扩散模型，单独训练和测试代理模型"]
+      separate --> verify["真实 SUMO 验证"]
 
       classDef root fill:#e8f3ff,stroke:#2b6cb0,stroke-width:1px,color:#111;
       classDef child fill:#edf7ed,stroke:#2f855a,stroke-width:1px,color:#111;
