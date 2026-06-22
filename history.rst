@@ -1,28 +1,34 @@
 历史
 ====
 
-.. mermaid::
+.. code-block:: text
 
-   flowchart TB
-      root["PAEDiff 交通信号优化"]
-      base["基础框架<br/>DQN + SUMO + 扩散模型"]
-      problem["问题发现<br/>-MSE 不能作为真实似然"]
-      proxy["当前方案<br/>代理模型预测真实 balance_score"]
-      result["当前诊断<br/>MAE 接近标签标准差<br/>Spearman 接近 0"]
-      next["后续改进方向<br/>排序学习 / 多目标预测 / 样本优化 / 单独验证"]
-
-      root --> base
-      base --> problem
-      problem --> proxy
-      proxy --> result
-      result --> next
-
-      classDef main fill:#e8f3ff,stroke:#2b6cb0,stroke-width:1px,color:#111;
-      classDef issue fill:#fff4e6,stroke:#c05621,stroke-width:1px,color:#111;
-      classDef plan fill:#edf7ed,stroke:#2f855a,stroke-width:1px,color:#111;
-      class root,base,proxy,result main;
-      class problem issue;
-      class next plan;
+   PAEDiff 交通信号优化
+   |
+   |-- 基础框架
+   |   |-- DQN + SUMO
+   |   |-- 条件扩散模型生成 reward 序列
+   |   `-- Pareto 平衡选择
+   |
+   |-- 问题发现
+   |   |-- 原始尝试：-MSE 作为似然
+   |   `-- 当前判断：-MSE 不是仿真后的真实似然
+   |
+   |-- 当前方案
+   |   |-- 扩散模型作为先验，生成候选样本
+   |   |-- 代理模型预测真实 SUMO 后的 balance_score
+   |   `-- 后验筛选根据 proxy_score 选择下一代
+   |
+   |-- 当前诊断
+   |   |-- MAE 接近真实标签标准差
+   |   |-- Spearman 接近 0
+   |   `-- 后验 22 轮中 11 轮变好、11 轮变差
+   |
+   `-- 后续改进方向
+       |-- 排序学习
+       |-- 多目标拆分预测
+       |-- 样本采样优化
+       `-- 单独验证代理模型与候选池质量
 
 2026-06-13：清理原始后验设计
 ----------------------------
@@ -107,23 +113,24 @@
 后续计划
 --------
 
-.. mermaid::
+.. code-block:: text
 
-   flowchart TB
-      improve["代理模型后续改进"]
-
-      improve --> rank["1. 排序学习<br/>不追求精确估分，重点排对样本优劣"]
-      rank --> multi["2. 多目标拆分<br/>分别预测 q、最差方向和方向差异"]
-      multi --> sample["3. 样本优化<br/>补充优秀区域样本，保留不确定样本"]
-      sample --> separate["4. 单独验证<br/>固定扩散模型，单独训练和测试代理模型"]
-      separate --> verify["真实 SUMO 验证"]
-
-      classDef root fill:#e8f3ff,stroke:#2b6cb0,stroke-width:1px,color:#111;
-      classDef child fill:#edf7ed,stroke:#2f855a,stroke-width:1px,color:#111;
-      classDef verify fill:#fff4e6,stroke:#c05621,stroke-width:1px,color:#111;
-      class improve root;
-      class rank,multi,sample,separate child;
-      class verify verify;
+   代理模型后续改进
+   |
+   |-- 1. 排序学习
+   |   `-- 不追求精确估分，重点学习候选样本之间谁更好
+   |
+   |-- 2. 多目标拆分预测
+   |   `-- 分别预测 q、最差方向队列、方向差异，再合成最终评分
+   |
+   |-- 3. 样本采样优化
+   |   `-- 补充优秀区域附近样本，并保留不确定样本送 SUMO
+   |
+   |-- 4. 单独验证代理模型
+   |   `-- 固定扩散模型，单独收集数据、训练代理模型、观察 CSV 结果
+   |
+   `-- 5. 真实 SUMO 验证
+       `-- 所有改进最终都用真实仿真结果判断是否有效
 
 后续重点：
 
