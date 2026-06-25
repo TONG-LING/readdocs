@@ -121,11 +121,22 @@
 
 .. code-block:: text
 
-   老师要求观察训练过程整体是否越来越好。
-   因此本次不把单个 round 作为主要展示对象，而是按 epoch 汇总种群质量。
+   本次实验关注训练过程中生成种群的整体质量变化。
+   因此不把单个样本或单个 round 作为主要结论，而是按 epoch 汇总种群质量。
    评价指标仍然使用真实 SUMO 仿真后的 balance_score，数值越低表示效果越好。
 
 整体 fitness 趋势：
+
+.. code-block:: text
+
+   mean：当前 epoch 内所有生成样本 balance_score 的平均值。
+   median：当前 epoch 内所有生成样本 balance_score 的中位数。
+   best：当前 epoch 内 balance_score 最小的样本，即该 epoch 的最优个体。
+
+   由于 balance_score 越低越好：
+   mean 下降表示整体种群平均质量变好；
+   median 下降表示大多数样本的质量变好；
+   best 下降表示当前 epoch 能生成更优的单个个体。
 
 .. image:: images/01_epoch_fitness_trend.png
    :alt: epoch 级种群 fitness 趋势
@@ -145,14 +156,29 @@
 
 .. code-block:: text
 
-   从 mean 看，整体种群平均 fitness 没有稳定下降，反而从 37.94 上升到 38.76。
-   从 median 看，中位数在 34.4 到 35.2 附近波动，也没有稳定变好。
-   从 best 看，epoch 3 出现过更优个体，best 从 33.21 降到 30.36，但 epoch 4 又回升到 31.07。
+   mean 从 37.94 缓慢上升到 38.76，没有下降趋势。
+   这说明整体种群平均质量没有变好，反而略微变差。
+
+   median 在 34.4 到 35.2 附近上下波动，没有持续下降。
+   这说明大多数样本的质量没有稳定改善。
+
+   best 在 epoch 3 明显下降到 30.36，说明模型可以偶尔生成更优个体。
+   但 epoch 4 又回升到 31.07，说明最优个体的改善还不稳定。
 
    因此当前实验只能说明模型有时能够生成更好的单个样本，
    但还不能证明整个种群生成质量随着训练稳定提升。
 
 tau 分布变化：
+
+.. code-block:: text
+
+   tau 是扩散模型生成的 reward 序列。
+   tau_mean 表示当前 epoch 生成 reward 序列的整体平均值。
+   tau_std 表示当前 epoch 生成 reward 序列的离散程度。
+
+   代码中的 reward = -queue，因此 reward 越大表示排队惩罚越小。
+   tau_mean 上升说明扩散模型生成的 reward 序列整体往更大的奖励值方向移动。
+   tau_std 下降说明生成 reward 的波动范围变小，样本分布更集中。
 
 .. image:: images/03_epoch_tau_stats.png
    :alt: epoch 级 tau 统计趋势
@@ -163,11 +189,27 @@ tau 分布变化：
 
 .. code-block:: text
 
-   tau_mean 和 tau_std 随 epoch 有明显变化。
-   这说明扩散模型生成的 reward 序列分布确实在变动。
-   但是 tau 的变化本身不能直接证明效果变好，最终仍然要看真实 SUMO fitness。
+   tau_mean 整体从较低位置向上移动，说明扩散模型生成的 reward 序列确实在往奖励值更大的方向变化。
+   结合 reward = -queue，这个方向从定义上看更接近低排队惩罚。
+
+   tau_std 相比初始 epoch 明显下降，说明生成 reward 的分布变得更集中。
+   这代表模型生成的样本不再像初始阶段那样分散，探索范围有所收缩。
+
+   但是 tau_mean 上升和 tau_std 下降没有稳定带来 balance_score 的下降。
+   因此当前问题不是扩散模型没有变化，而是 reward 分布变化还没有稳定转化成真实 SUMO 效果提升。
 
 epoch 内部进化变化：
+
+.. code-block:: text
+
+   mean delta = 进化后 mean balance_score - 进化前 mean balance_score。
+   best delta = 进化后 best balance_score - 进化前 best balance_score。
+   improved ratio = 进化后 balance_score 下降的样本比例。
+
+   由于 balance_score 越低越好：
+   delta < 0 表示变好；
+   delta > 0 表示变差；
+   improved ratio 越高，说明变好的样本比例越大。
 
 .. image:: images/04_epoch_evolution_change.png
    :alt: epoch 内部进化变化
@@ -178,9 +220,14 @@ epoch 内部进化变化：
 
 .. code-block:: text
 
-   mean delta 大部分为正，表示平均 fitness 在内部进化后经常变差。
-   best delta 在 epoch 2 和 epoch 3 为负，说明最优个体有时会被改进。
-   improved ratio 没有稳定超过 0.5，说明大部分样本并没有稳定改善。
+   mean delta 大部分位于 0 以上，说明内部进化后平均 balance_score 经常升高。
+   这代表平均种群质量在进化后没有稳定变好，部分 epoch 反而变差。
+
+   best delta 在 epoch 2 和 epoch 3 为负，说明最优个体在这些 epoch 中确实被进一步改进。
+   但是 best delta 不是每个 epoch 都为负，因此最优样本的改进也不稳定。
+
+   improved ratio 没有稳定超过 0.5，说明超过一半样本变好的情况并不稳定。
+   这进一步说明当前进化过程更像是偶尔找到好个体，而不是稳定推动整个种群变好。
 
 本次结论：
 
