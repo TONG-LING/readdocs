@@ -114,6 +114,87 @@
    当前问题更可能来自代理模型预测和排序能力不足。
    也需要进一步检查扩散模型候选池本身是否包含足够好的样本。
 
+2026-06-25：整体种群生成趋势评估
+--------------------------------
+
+本次实验目的：
+
+.. code-block:: text
+
+   老师要求观察训练过程整体是否越来越好。
+   因此本次不把单个 round 作为主要展示对象，而是按 epoch 汇总种群质量。
+   评价指标仍然使用真实 SUMO 仿真后的 balance_score，数值越低表示效果越好。
+
+整体 fitness 趋势：
+
+.. image:: images/01_epoch_fitness_trend.png
+   :alt: epoch 级种群 fitness 趋势
+   :align: center
+   :width: 90%
+
+实验结果：
+
+.. code-block:: text
+
+   epoch 1：mean = 37.9372，median = 34.5929，best = 33.2110
+   epoch 2：mean = 37.9439，median = 35.1833，best = 33.5855
+   epoch 3：mean = 38.3249，median = 34.4186，best = 30.3600
+   epoch 4：mean = 38.7608，median = 34.8174，best = 31.0725
+
+趋势判断：
+
+.. code-block:: text
+
+   从 mean 看，整体种群平均 fitness 没有稳定下降，反而从 37.94 上升到 38.76。
+   从 median 看，中位数在 34.4 到 35.2 附近波动，也没有稳定变好。
+   从 best 看，epoch 3 出现过更优个体，best 从 33.21 降到 30.36，但 epoch 4 又回升到 31.07。
+
+   因此当前实验只能说明模型有时能够生成更好的单个样本，
+   但还不能证明整个种群生成质量随着训练稳定提升。
+
+tau 分布变化：
+
+.. image:: images/03_epoch_tau_stats.png
+   :alt: epoch 级 tau 统计趋势
+   :align: center
+   :width: 90%
+
+当前观察：
+
+.. code-block:: text
+
+   tau_mean 和 tau_std 随 epoch 有明显变化。
+   这说明扩散模型生成的 reward 序列分布确实在变动。
+   但是 tau 的变化本身不能直接证明效果变好，最终仍然要看真实 SUMO fitness。
+
+epoch 内部进化变化：
+
+.. image:: images/04_epoch_evolution_change.png
+   :alt: epoch 内部进化变化
+   :align: center
+   :width: 90%
+
+当前观察：
+
+.. code-block:: text
+
+   mean delta 大部分为正，表示平均 fitness 在内部进化后经常变差。
+   best delta 在 epoch 2 和 epoch 3 为负，说明最优个体有时会被改进。
+   improved ratio 没有稳定超过 0.5，说明大部分样本并没有稳定改善。
+
+本次结论：
+
+.. code-block:: text
+
+   当前框架已经可以记录并展示 epoch 级别的种群变化。
+   从现有结果看，扩散模型生成分布在变化，也能偶尔产生更优个体。
+   但是整体种群质量没有随 epoch 稳定提升。
+
+   下一步不应只看是否出现最优样本，而应重点提高整体种群分布质量：
+   1. 让训练数据中优秀样本比例更高；
+   2. 改进代理模型或筛选方式，避免平均种群质量被拉差；
+   3. 继续用真实 SUMO 的 balance_score 作为最终判断依据。
+
 后续计划
 --------
 
