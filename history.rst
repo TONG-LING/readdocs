@@ -201,41 +201,62 @@ epoch 内部进化变化：
 .. mermaid::
 
    graph TD
-      improve["代理模型后续改进"]
-      rank_plan["排序学习"]
-      multi_plan["多目标拆分"]
-      sample_plan["样本优化"]
-      separate_plan["单独验证"]
-      verify["真实 SUMO 验证"]
+      trend["当前现象：best 偶尔变好，但 mean 没有稳定下降"]
+      mean_plan["目标一：提高整体种群平均质量"]
+      best_plan["目标二：保留并扩展优秀个体附近区域"]
+      tau_plan["目标三：约束 tau 分布漂移方向"]
+      proxy_plan["目标四：让代理模型服务于种群筛选"]
+      verify["真实 SUMO 验证 epoch 趋势"]
 
-      improve --> rank_plan
-      improve --> multi_plan
-      improve --> sample_plan
-      improve --> separate_plan
-      rank_plan --> verify
-      multi_plan --> verify
-      sample_plan --> verify
-      separate_plan --> verify
+      trend --> mean_plan
+      trend --> best_plan
+      trend --> tau_plan
+      mean_plan --> proxy_plan
+      best_plan --> proxy_plan
+      tau_plan --> proxy_plan
+      proxy_plan --> verify
 
 改进方向说明：
 
 .. code-block:: text
 
-   排序学习：学习候选样本之间谁更好，而不是只追求精确预测分数
-   多目标拆分：分别预测 q、最差方向队列、方向差异，再合成最终评分
-   样本优化：补充优秀区域附近样本，并保留不确定样本送 SUMO
-   单独验证：固定扩散模型，单独收集数据、训练和测试代理模型
-   真实 SUMO 验证：所有改进最终都要用真实仿真结果判断是否有效
+   1. 提高整体种群平均质量
+      当前 mean 没有随 epoch 下降，说明不是整个种群都在变好。
+      后续不能只关注 best，而要记录每个 epoch 的 mean、median、best、std。
+      如果 mean 不下降，即使偶尔出现好样本，也不能说明生成分布整体有效。
+
+   2. 保留并扩展优秀个体附近区域
+      epoch 3 出现 best = 30.36，说明候选空间中确实可能存在好样本。
+      后续应把这类优秀样本作为局部中心，在其附近生成更多候选。
+      目标不是只保存一个最优样本，而是让更多样本靠近优秀区域，从而拉低 mean。
+
+   3. 约束 tau 分布漂移方向
+      tau_mean 和 tau_std 变化明显，但 fitness 没有同步稳定变好。
+      这说明 tau 分布在动，但移动方向不一定对应更优交通控制效果。
+      后续需要比较优秀样本 tau 与普通样本 tau 的差异，避免扩散模型盲目漂移。
+
+   4. 让代理模型服务于整体种群筛选
+      代理模型不应只追求预测分数准确，而要能把会拉低 mean 的候选提前筛出来。
+      后续可以优先做排序学习，让代理模型判断两个候选谁更好。
+      同时保留一部分代理模型不确定的样本送入真实 SUMO，避免错过潜在好样本。
+
+   5. 用真实 SUMO 验证 epoch 趋势
+      每次修改后都继续画 epoch 级趋势图。
+      只有当 mean、median、best 至少两个指标稳定下降时，才认为整体种群生成质量变好。
 
 后续重点：
 
 .. code-block:: text
 
-   1. 不只看预测数值误差，还要看排序是否正确。
-   2. 不只判断代理模型，还要判断扩散候选池质量。
-   3. 不只预测单一综合指标，也尝试拆成多个子目标预测。
-   4. 不完全相信代理模型，对不确定样本保留一部分真实 SUMO 验证。
-   5. 单独拆出代理模型训练流程，降低调试成本。
+   当前最关键的问题不是能不能生成一个好样本，
+   而是能不能让整个生成种群的分布逐步向好样本区域移动。
+
+   因此后续实验判断标准调整为：
+   1. mean 是否随 epoch 下降；
+   2. median 是否随 epoch 下降；
+   3. best 是否稳定保持或继续下降；
+   4. std 是否变小，说明种群不再大范围波动；
+   5. tau 分布变化是否能对应 fitness 改善。
 
 当前核心公式
 ------------
