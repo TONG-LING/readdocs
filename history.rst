@@ -229,6 +229,90 @@ epoch 内部进化变化：
    improved ratio 没有稳定超过 0.5，说明超过一半样本变好的情况并不稳定。
    这进一步说明当前进化过程更像是偶尔找到好个体，而不是稳定推动整个种群变好。
 
+高维样本结构可视化：
+
+.. code-block:: text
+
+   前面的折线图主要观察整体结果，例如 mean、median、best 和 delta。
+   这些图可以反映一批样本整体有没有变好，
+   但是不能直接展示样本内部哪些位置发生了变化。
+
+   因此这里把每轮保存下来的 tau 和 rho 画成热力图。
+   图中的前三个子图分别表示 round1、round2、round3。
+   右下角是 round3 - round1，用来观察三轮之后哪些位置增大，哪些位置减小。
+
+tau 高维结构：
+
+.. code-block:: text
+
+   tau 表示扩散模型生成的 reward 序列。
+   原始 tau 是 sample_count × time_step × direction。
+   因为一个 round 中包含多个样本，
+   所以这里先对 sample_count 求平均，
+   这样就能得到一张 time_step × direction 的图。
+
+   横轴是 direction_index，对应 reward 序列中的不同方向或动作维度。
+   纵轴是 time_step，对应时间步。
+   颜色表示这个位置上的 tau 平均值。
+
+.. image:: images/tau.png
+   :alt: tau 高维结构变化
+   :align: center
+   :width: 90%
+
+tau 图观察：
+
+.. code-block:: text
+
+   从图上看，round1、round2、round3 的颜色分布并不完全相同。
+   这说明扩散模型每一轮生成出来的 tau 存在变化，
+   不是三轮都在生成完全相同的 reward 序列。
+
+   右下角的差值图里有红色也有蓝色。
+   红色表示 round3 这个位置的 tau 比 round1 更大；
+   蓝色表示 round3 这个位置的 tau 比 round1 更小。
+
+   因此目前可以看到，tau 并不是只发生整体平移，
+   而是在不同 time_step 和 direction 上都有一些局部变化。
+   不过这个图只能说明 tau 本身发生了变化，
+   还不能直接说明这些变化一定能让 SUMO 结果变好，
+   这个还要和真实仿真后的 balance_score 放在一起看。
+
+rho 高维结构：
+
+.. code-block:: text
+
+   rho 表示状态-动作条件信息。
+   当前 rho 的形状为 time_step × feature_index。
+
+   横轴是 feature_index，对应状态-动作条件里的不同特征。
+   纵轴是 time_step。
+   颜色表示这个时间步下某个特征的 rho 数值。
+
+.. image:: images/rho.png
+   :alt: rho 高维结构变化
+   :align: center
+   :width: 90%
+
+rho 图观察：
+
+.. code-block:: text
+
+   rho 这张图和 tau 不太一样。
+   它的横轴只有 24 个特征，所以图上会出现比较明显的竖向特征带。
+   这些特征带说明 rho 的变化主要集中在部分 feature 上，
+   并不是所有 feature 都有相同程度的变化。
+
+   从 round1、round2、round3 看，主要高值区域大体集中在相近的 feature 上。
+   这说明 rho 的主要结构保持相对稳定。
+
+   但是右下角的差值图里也能看到一些红色和蓝色区域，
+   说明部分 feature 在某些时间步上仍然发生了变化。
+
+   所以这张图主要说明：
+   rho 的整体结构比较稳定；
+   但不同轮次之间并不是完全不变，局部特征仍然有调整。
+
 本次结论：
 
 .. code-block:: text
