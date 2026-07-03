@@ -427,21 +427,19 @@ SUMO 真实评价：
    有时候能出一个更好的样本，但整个种群就是没有一直往好了走。
    这到底是扩散模型的问题，还是代理模型的问题，还是继承机制的问题？
 
-用了哪些数据：
+所以我看了下面的四个采样数据并进行了分析：
 
-.. code-block:: text
+1. iteration_stats.csv
+   整体种群最后有没有变好？
 
-   data/iteration_stats.csv
-      每轮进化之后的总体统计表，看看这一代整体怎么样。
+2. proxy_surrogate_metrics.csv
+   代理模型本身训练得怎么样？
 
-   data/proxy_surrogate_metrics.csv
-      代理模型训练时的指标。
+3. proxy_candidate_selection_*.csv
+   代理筛选时有没有真的把候选区分开？
 
-   data/samples/proxy_candidate_selection_*.csv
-      代理模型怎么给候选池打分、怎么筛选的详细记录。
-
-   data/samples/sample_eval_proxy_posterior_*.csv
-      代理筛完之后，拿去跑真实 SUMO 的结果。
+4. sample_eval_proxy_posterior_*.csv
+   被筛出来的样本，真实跑 SUMO 后到底有没有更好？
 
 怎么判断真实后验结果：
 
