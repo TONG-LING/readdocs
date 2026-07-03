@@ -432,10 +432,16 @@ SUMO 真实评价：
 .. code-block:: text
 
    data/iteration_stats.csv
+   每一轮进化之后的总体统计表，记录这一代种群整体表现怎么样。
+
    data/proxy_surrogate_metrics.csv
+   代理模型自己训练时的指标记录。
+
    data/samples/proxy_candidate_selection_*.csv
+   代理模型对候选池打分和筛选的明细表。
+
    data/samples/sample_eval_proxy_posterior_*.csv
-   代码文件：main14.py, traffic_simulator.py
+   代理筛完以后，拿去跑真实 SUMO 的结果表。
 
 真实后验结果怎么判断：
 
@@ -588,12 +594,6 @@ SUMO 真实评价：
      - 0.000001
      - 几乎常数打分
 
-.. note::
-
-   proxy_surrogate_metrics.csv 里的 target_std 如果过小，会在代码里被兜底成 1.0。
-   所以判断标签是否真的塌缩，不能只看这个文件，
-   还要结合 sample_eval_proxy_posterior 中真实仿真后的 balance_score 一起看。
-
 从上面的数据看：
 
 .. code-block:: text
@@ -605,7 +605,7 @@ SUMO 真实评价：
 
 1. 真实 elite 继承太弱
 
-   - 当前实现不是围绕一批优秀样本做局部变异，而是先从扩散模型重新生成一整池候选，再从中筛出下一代。
+   - 当前实现是每次先从扩散模型重新生成一整池候选，再从中筛出下一代，并不是围绕一批优秀样本做局部变异。
    - 实际上每轮只把 1 个真实 elite 强行放回下一代，另外 95 个样本都是重新筛出来的。
    - 这样好样本的记忆很弱，某一代偶尔变出一个好点，下一代大部分样本还是散回去。
 
@@ -678,4 +678,4 @@ SUMO 真实评价：
    不是没有优化信号，而是好结果传不下去。
 
    下一步最重要的不是加新模块，
-   而是先把”多 elite 继承 + 局部变异 + 连续微调”这条主链路修顺。
+   而是先把多 elite 继承、局部变异、连续微调这几个问题解决掉。
