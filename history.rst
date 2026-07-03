@@ -437,12 +437,6 @@ SUMO 真实评价：
    data/samples/sample_eval_proxy_posterior_*.csv
    代码文件：main14.py, traffic_simulator.py
 
-.. note::
-
-   iteration_stats.csv 里的 best_queue 记录的是“当前 round 截至这一代为止的历史最优”，
-   不是“这一代刚仿真完的即时最优”。
-   所以这次判断进化是否真的变好，主要以 sample_eval_proxy_posterior 中每次真实 SUMO 评估结果为准。
-
 真实后验结果怎么判断：
 
 .. code-block:: text
@@ -663,23 +657,19 @@ SUMO 真实评价：
    所以 best 偶尔能降一下，但 mean 很难持续下降，
    整体就是”有时能出一个好样本，但种群整体没有稳定变好”。
 
-当前最值得先改的地方：
+当前已经修改了对应代码，正在跑实验，等结果出来再看。
 
 .. list-table::
    :header-rows: 1
 
-   * - 优先级
-     - 修改点
-     - 为什么先改
-   * - 1
-     - 真正围绕多个真实 elite 做局部变异
-     - 直接增强优秀区域的继承和放大
-   * - 2
-     - 修掉 fine-tune 重置
-     - 让回合内微调真正能累积，而不是每次回到旧起点
-   * - 3
-     - 检查 reward 是否必须离散化
-     - 避免样本之间本来存在的小数差异在后处理里被抹平
+   * - 修改点
+     - 做了什么
+   * - 多 elite 继承
+     - 用多个真实 elite 做局部变异，不再只保留 1 个
+   * - fine-tune 重置
+     - 去掉每次从 BEST_DDP_MODEL_PATH 重新加载，让回合内微调能累积
+   * - reward 离散化
+     - 去掉 reward 转 int 的操作，保留浮点精度
 
 这次发现的问题：
 
