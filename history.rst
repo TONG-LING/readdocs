@@ -429,17 +429,19 @@ SUMO 真实评价：
 
 所以我看了下面的四个采样数据并进行了分析：
 
-1. iteration_stats.csv
-   整体种群最后有没有变好？
+.. code-block:: text
 
-2. proxy_surrogate_metrics.csv
-   代理模型本身训练得怎么样？
+   1. iteration_stats.csv
+      整体种群最后有没有变好？
 
-3. proxy_candidate_selection_*.csv
-   代理筛选时有没有真的把候选区分开？
+   2. proxy_surrogate_metrics.csv
+      代理模型本身训练得怎么样？
 
-4. sample_eval_proxy_posterior_*.csv
-   被筛出来的样本，真实跑 SUMO 后到底有没有更好？
+   3. proxy_candidate_selection_*.csv
+      代理筛选时有没有真的把候选区分开？
+
+   4. sample_eval_proxy_posterior_*.csv
+      被筛出来的样本，真实跑 SUMO 后到底有没有更好？
 
 怎么判断真实后验结果：
 
